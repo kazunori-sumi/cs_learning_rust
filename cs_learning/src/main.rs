@@ -4,6 +4,7 @@
 mod week1_basic_structures;
 
 fn main() {
+    println!("hash: {}", simple_hash("test_string"));
     println!("=== CS Learning with Rust ===");
     println!("コンピュータサイエンス学習プロジェクトへようこそ！");
     println!();
@@ -19,4 +20,12 @@ fn main() {
     println!("  cd cs_learning && cargo test stack");
     println!("  cd cs_learning && cargo test queue");
     println!("  cd cs_learning && cargo test hash_map");
+}
+
+fn simple_hash(s: &str) -> usize {
+    let mut hash = 0;
+    for (i, ch) in s.chars().enumerate() {
+        hash += (ch as usize) * (31_usize.pow(i as u32));
+    }
+    return hash;
 }
