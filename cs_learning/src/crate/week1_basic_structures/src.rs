@@ -5,8 +5,8 @@
 // ---------------------------------------------------------
 
 pub mod my_vec {
-    use std::alloc::{self, Layout};
-    use std::ptr;
+    use std::alloc::{alloc, dealloc, Layout};
+    use std::ptr::{self, NonNull};
 
     /// 動的配列の簡易実装
     ///
@@ -18,7 +18,7 @@ pub mod my_vec {
     /// assert_eq!(vec.pop(), Some(2));
     /// ```
     pub struct MyVec<T> {
-        ptr: *mut T,      // データへのポインタ
+        ptr: NonNull<T>,  // データへのポインタ（null でないことが保証される）
         len: usize,       // 現在の要素数
         capacity: usize,  // 確保済みの容量
     }
@@ -27,7 +27,7 @@ pub mod my_vec {
         /// 新しい空のベクターを作成
         pub fn new() -> Self {
             MyVec {
-                ptr: ptr::null_mut(),
+                ptr: NonNull::dangling(),  // 容量0の場合はダミーポインタ
                 len: 0,
                 capacity: 0,
             }
@@ -35,19 +35,46 @@ pub mod my_vec {
 
         /// 指定した容量で新しいベクターを作成
         pub fn with_capacity(capacity: usize) -> Self {
-            // TODO: 実装してください
-            // ヒント: Layout::array を使ってメモリを確保
-            unimplemented!("with_capacity を実装してください")
+            if capacity == 0 {
+                return Self::new();
+            }
+
+            // 1. メモリレイアウト作成
+            let layout = Layout::array::<T>(capacity)
+                .expect("Failed to create layout");
+
+            // 2. メモリ確保
+            let ptr = unsafe { alloc(layout) };
+
+            // 3. null チェック
+            if ptr.is_null() {
+                panic!("Memory allocation failed");
+            }
+
+            // 4. 型付きポインタに変換（NonNull で wrap）
+            let ptr = unsafe { NonNull::new_unchecked(ptr as *mut T) };
+
+            MyVec {
+                ptr,
+                len: 0,
+                capacity,
+            }
         }
 
         /// 要素を末尾に追加
         pub fn push(&mut self, value: T) {
-            // TODO: 実装してください
-            // ヒント:
             // 1. 容量が足りない場合は grow() を呼ぶ
+            if self.len == self.capacity {
+                self.grow();
+            }
+
             // 2. ptr.add(len) に値を書き込む
+            unsafe {
+                ptr::write(self.ptr.as_ptr().add(self.len), value);
+            }
+
             // 3. len をインクリメント
-            unimplemented!("push を実装してください")
+            self.len += 1;
         }
 
         /// 末尾の要素を削除して返す
@@ -79,13 +106,38 @@ pub mod my_vec {
 
         /// 容量を拡張（内部関数）
         fn grow(&mut self) {
-            // TODO: 実装してください
-            // ヒント:
             // 1. 新しい容量 = max(capacity * 2, 1)
+            let new_capacity = if self.capacity == 0 {
+                1
+            } else {
+                self.capacity * 2
+            };
             // 2. 新しいメモリを確保
+            let layout = Layout::array::<T>(new_capacity).expect("Failed to Create layout");
+            let new_ptr = unsafe { alloc(layout) };
+            if new_ptr.is_null() {
+                panic!("Could not allocate");
+            }
+            let new_ptr = unsafe { NonNull::new_unchecked(new_ptr as *mut T) };
             // 3. 古いデータをコピー
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    self.ptr.as_ptr(), 
+                    new_ptr.as_ptr(), 
+                    self.len,
+                )
+            };
+            
             // 4. 古いメモリを解放
-            unimplemented!("grow を実装してください")
+            if self.capacity > 0 {
+                let old_layout = Layout::array::<T>(self.capacity).unwrap();
+                unsafe {
+                    dealloc(self.ptr.as_ptr() as *mut u8, old_layout);
+                }
+            }
+
+            self.ptr = new_ptr;
+            self.capacity = new_capacity;
         }
     }
 
