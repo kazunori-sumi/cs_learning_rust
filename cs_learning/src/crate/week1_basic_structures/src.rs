@@ -79,13 +79,21 @@ pub mod my_vec {
 
         /// 末尾の要素を削除して返す
         pub fn pop(&mut self) -> Option<T> {
-            // TODO: 実装してください
-            unimplemented!("pop を実装してください")
+            if self.len == 0 {
+                None
+            } else {
+                self.len -= 1;
+                unsafe {
+                    let raw_ptr = self.ptr.as_ptr();
+                    let element_ptr = raw_ptr.add(self.len);
+                    Some(std::ptr::read(element_ptr))
+                }
+            }
         }
 
         /// インデックスで要素を取得
         pub fn get(&self, index: usize) -> Option<&T> {
-            // TODO: 実装してください
+            // TODO: 実装してくださいW
             unimplemented!("get を実装してください")
         }
 
