@@ -18,16 +18,16 @@ pub mod my_vec {
     /// assert_eq!(vec.pop(), Some(2));
     /// ```
     pub struct MyVec<T> {
-        ptr: NonNull<T>,  // データへのポインタ（null でないことが保証される）
-        len: usize,       // 現在の要素数
-        capacity: usize,  // 確保済みの容量
+        ptr: NonNull<T>, // データへのポインタ（null でないことが保証される）
+        len: usize,      // 現在の要素数
+        capacity: usize, // 確保済みの容量
     }
 
     impl<T> MyVec<T> {
         /// 新しい空のベクターを作成
         pub fn new() -> Self {
             MyVec {
-                ptr: NonNull::dangling(),  // 容量0の場合はダミーポインタ
+                ptr: NonNull::dangling(), // 容量0の場合はダミーポインタ
                 len: 0,
                 capacity: 0,
             }
@@ -40,8 +40,7 @@ pub mod my_vec {
             }
 
             // 1. メモリレイアウト作成
-            let layout = Layout::array::<T>(capacity)
-                .expect("Failed to create layout");
+            let layout = Layout::array::<T>(capacity).expect("Failed to create layout");
 
             // 2. メモリ確保
             let ptr = unsafe { alloc(layout) };
@@ -93,8 +92,15 @@ pub mod my_vec {
 
         /// インデックスで要素を取得
         pub fn get(&self, index: usize) -> Option<&T> {
-            // TODO: 実装してくださいW
-            unimplemented!("get を実装してください")
+            if index >= self.len {
+                None
+            } else {
+                unsafe {
+                    let raw_ptr = self.ptr.as_ptr();
+                    let element_ptr = raw_ptr.add(index - 1);
+                    Some(&*element_ptr)
+                }
+            }
         }
 
         /// 現在の要素数
@@ -128,14 +134,8 @@ pub mod my_vec {
             }
             let new_ptr = unsafe { NonNull::new_unchecked(new_ptr as *mut T) };
             // 3. 古いデータをコピー
-            unsafe {
-                ptr::copy_nonoverlapping(
-                    self.ptr.as_ptr(), 
-                    new_ptr.as_ptr(), 
-                    self.len,
-                )
-            };
-            
+            unsafe { ptr::copy_nonoverlapping(self.ptr.as_ptr(), new_ptr.as_ptr(), self.len) };
+
             // 4. 古いメモリを解放
             if self.capacity > 0 {
                 let old_layout = Layout::array::<T>(self.capacity).unwrap();
@@ -220,10 +220,7 @@ pub mod linked_list {
     impl<T> LinkedList<T> {
         /// 新しい空のリストを作成
         pub fn new() -> Self {
-            LinkedList {
-                head: None,
-                len: 0,
-            }
+            LinkedList { head: None, len: 0 }
         }
 
         /// 先頭に要素を追加
@@ -234,20 +231,18 @@ pub mod linked_list {
             // 2. 新しいノードの next に現在の head を設定
             // 3. head を新しいノードに更新
             // 4. len をインクリメント
-            unimplemented!("push_front を実装してください")
         }
 
         /// 先頭の要素を削除して返す
         pub fn pop_front(&mut self) -> Option<T> {
             // TODO: 実装してください
-            unimplemented!("pop_front を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 末尾に要素を追加
         pub fn push_back(&mut self, data: T) {
             // TODO: 実装してください（チャレンジ課題）
             // ヒント: 末尾まで辿る必要がある
-            unimplemented!("push_back を実装してください")
         }
 
         /// 先頭の要素を参照
@@ -331,31 +326,31 @@ pub mod stack {
         /// 新しい空のスタックを作成
         pub fn new() -> Self {
             // TODO: 実装してください
-            unimplemented!("new を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 要素をプッシュ
         pub fn push(&mut self, item: T) {
             // TODO: 実装してください
-            unimplemented!("push を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 要素をポップ
         pub fn pop(&mut self) -> Option<T> {
             // TODO: 実装してください
-            unimplemented!("pop を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// トップの要素を参照
         pub fn peek(&self) -> Option<&T> {
             // TODO: 実装してください
-            unimplemented!("peek を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 空かどうか
         pub fn is_empty(&self) -> bool {
             // TODO: 実装してください
-            unimplemented!("is_empty を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 要素数
@@ -378,7 +373,7 @@ pub mod stack {
         // 1. 開き括弧が来たらスタックにプッシュ
         // 2. 閉じ括弧が来たらスタックからポップして対応を確認
         // 3. 最後にスタックが空なら true
-        unimplemented!("check_balanced_parentheses を実装してください")
+        unimplemented!("unimplemented")
     }
 
     #[cfg(test)]
@@ -425,26 +420,26 @@ pub mod queue {
         /// 新しい空のキューを作成
         pub fn new() -> Self {
             // TODO: 実装してください
-            unimplemented!("new を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 要素をエンキュー（末尾に追加）
         pub fn enqueue(&mut self, item: T) {
             // TODO: 実装してください
-            unimplemented!("enqueue を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 要素をデキュー（先頭から削除）
         pub fn dequeue(&mut self) -> Option<T> {
             // TODO: 実装してください
             // 注意: Vec::remove(0) は O(n) なので、後でリングバッファ版も実装してみよう
-            unimplemented!("dequeue を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 先頭の要素を参照
         pub fn peek(&self) -> Option<&T> {
             // TODO: 実装してください
-            unimplemented!("peek を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// 空かどうか
@@ -483,9 +478,9 @@ pub mod queue {
 // ---------------------------------------------------------
 
 pub mod hash_map {
+    use std::collections::hash_map::DefaultHasher;
     use std::collections::LinkedList;
     use std::hash::{Hash, Hasher};
-    use std::collections::hash_map::DefaultHasher;
 
     /// キーと値のペア
     #[derive(Clone)]
@@ -537,19 +532,17 @@ pub mod hash_map {
             // 3. あれば値を更新、なければ新しいエントリを追加
             // 4. len をインクリメント
             // 5. 負荷率をチェックして、必要なら resize
-            unimplemented!("insert を実装してください")
         }
 
         /// キーで値を取得
         pub fn get(&self, key: &K) -> Option<&V> {
-            // TODO: 実装してください
-            unimplemented!("get を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// キーを削除
         pub fn remove(&mut self, key: &K) -> Option<V> {
             // TODO: 実装してください
-            unimplemented!("remove を実装してください")
+            unimplemented!("unimplemented")
         }
 
         /// キーが存在するか確認
@@ -571,7 +564,7 @@ pub mod hash_map {
         fn resize(&mut self) {
             // TODO: 実装してください
             // ヒント: 容量を2倍にして、すべての要素を再ハッシュ
-            unimplemented!("resize を実装してください")
+            unimplemented!("unimplemented")
         }
     }
 
