@@ -97,7 +97,7 @@ pub mod my_vec {
             } else {
                 unsafe {
                     let raw_ptr = self.ptr.as_ptr();
-                    let element_ptr = raw_ptr.add(index - 1);
+                    let element_ptr = raw_ptr.add(index);
                     Some(&*element_ptr)
                 }
             }
@@ -170,7 +170,13 @@ pub mod my_vec {
         }
 
         #[test]
-        #[ignore] // 実装が完了したらこの行を削除
+        fn test_with_capacity() {
+            let vec: MyVec<usize> = MyVec::with_capacity(8);
+            assert_eq!(vec.capacity, 8);
+            assert_eq!(vec.capacity(), 8);
+        }
+
+        #[test]
         fn test_push_and_pop() {
             let mut vec = MyVec::new();
             vec.push(1);
@@ -184,7 +190,6 @@ pub mod my_vec {
         }
 
         #[test]
-        #[ignore]
         fn test_capacity_growth() {
             let mut vec = MyVec::new();
 
@@ -194,6 +199,16 @@ pub mod my_vec {
 
             assert!(vec.capacity() >= 10);
             assert_eq!(vec.len(), 10);
+        }
+        #[test]
+        fn test_get() {
+            let mut vec = MyVec::new();
+            for i in 0..10 {
+                vec.push(i + 1);
+            }
+
+            assert_eq!(vec.get(0), Some(&1));
+            assert_eq!(vec.get(9), Some(&10));
         }
     }
 }
