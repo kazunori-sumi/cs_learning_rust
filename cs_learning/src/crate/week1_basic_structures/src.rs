@@ -151,10 +151,21 @@ pub mod my_vec {
 
     impl<T> Drop for MyVec<T> {
         fn drop(&mut self) {
-            // TODO: 実装してください
-            // ヒント:
+            if self.capacity == 0 {
+                return;
+            }
             // 1. 各要素に対して drop を呼ぶ
+            for i in 0..self.len {
+                unsafe {
+                    let idx = self.ptr.as_ptr().add(i);
+                    ptr::drop_in_place(idx);
+                }
+            }
             // 2. メモリを解放
+            unsafe {
+                let layout = Layout::array::<T>(self.capacity).unwrap();
+                dealloc(self.ptr.as_ptr() as *mut u8, layout);
+            }
         }
     }
 
@@ -209,6 +220,115 @@ pub mod my_vec {
 
             assert_eq!(vec.get(0), Some(&1));
             assert_eq!(vec.get(9), Some(&10));
+        }
+
+        #[test]
+        fn test_drop_with_many_elements() {
+            // 大量の要素でメモリリークがないか確認
+            for _ in 0..100 {
+                let mut vec = MyVec::new();
+                for i in 0..100 {
+                    vec.push(format!("String {}", i));
+                }
+                // スコープを抜けるときに全要素がdropされる
+            }
+        }
+
+        #[test]
+        fn test_drop_count() {
+            use std::sync::atomic::{AtomicUsize, Ordering};
+            use std::sync::Arc;
+
+            // Dropが何回呼ばれたかカウントする型
+            struct DropCounter {
+                count: Arc<AtomicUsize>,
+            }
+
+            impl Drop for DropCounter {
+                fn drop(&mut self) {
+                    self.count.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+
+            let drop_count = Arc::new(AtomicUsize::new(0));
+
+            {
+                let mut vec = MyVec::new();
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+            } // ここで5つのDropCounterがdropされるはず
+
+            // 5回dropが呼ばれたか確認
+            assert_eq!(drop_count.load(Ordering::SeqCst), 5);
+        }
+
+        #[test]
+        fn test_drop_after_pop() {
+            use std::sync::atomic::{AtomicUsize, Ordering};
+            use std::sync::Arc;
+
+            struct DropCounter {
+                count: Arc<AtomicUsize>,
+            }
+
+            impl Drop for DropCounter {
+                fn drop(&mut self) {
+                    self.count.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+
+            let drop_count = Arc::new(AtomicUsize::new(0));
+
+            {
+                let mut vec = MyVec::new();
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+                vec.push(DropCounter {
+                    count: drop_count.clone(),
+                });
+
+                // 1つpopする（この時点で1回dropされる）
+                let _popped = vec.pop();
+                drop(_popped); // 明示的にdrop
+
+                assert_eq!(drop_count.load(Ordering::SeqCst), 1);
+
+                // 残り2つはMyVecのdropで処理される
+            }
+
+            // 合計3回dropが呼ばれたか確認
+            assert_eq!(drop_count.load(Ordering::SeqCst), 3);
+        }
+
+        #[test]
+        fn test_drop_empty_vec() {
+            // 空のベクタのdropでパニックしないか確認
+            let vec: MyVec<i32> = MyVec::new();
+            drop(vec); // 明示的にdrop
+        }
+
+        #[test]
+        fn test_drop_with_capacity_but_no_elements() {
+            // 容量はあるが要素がない場合
+            let vec: MyVec<String> = MyVec::with_capacity(10);
+            drop(vec); // パニックしないはず
         }
     }
 }
