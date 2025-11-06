@@ -351,7 +351,7 @@ pub mod linked_list {
         head: Option<Box<Node<T>>>,
         len: usize,
     }
-    
+
     impl<T> LinkedList<T> {
         /// 新しい空のリストを作成
         pub fn new() -> Self {
@@ -364,7 +364,7 @@ pub mod linked_list {
             // 2. 新しいノードの next に現在の head を設定
             let new_node = Node {
                 data,
-                next: self.head.take()
+                next: self.head.take(),
             };
             // 3. head を新しいノードに更新
             self.head = Some(Box::new(new_node));
@@ -377,11 +377,11 @@ pub mod linked_list {
             // match で先頭ノードを評価
             match self.head.take() {
                 Some(node) => {
-                                // 新たな head に取り出した Node.next をセット
-                                self.head = node.next;
-                                self.len -= 1;
-                                Some(node.data)
-                            }
+                    // 新たな head に取り出した Node.next をセット
+                    self.head = node.next;
+                    self.len -= 1;
+                    Some(node.data)
+                }
                 None => None,
             }
         }
@@ -390,10 +390,7 @@ pub mod linked_list {
         pub fn push_back(&mut self, data: T) {
             // TODO: 実装してください（チャレンジ課題）
             // ヒント: 末尾まで辿る必要がある
-            let new_node = Box::new(Node {
-                data,
-                next: None,
-            });
+            let new_node = Box::new(Node { data, next: None });
 
             match self.head {
                 None => {
@@ -440,7 +437,7 @@ pub mod linked_list {
     impl<'a, T> Iterator for Iter<'a, T> {
         type Item = &'a T;
 
-        fn next(&mut self) -> Option<Self::Item>{
+        fn next(&mut self) -> Option<Self::Item> {
             self.current.map(|node| {
                 self.current = node.next.as_ref().map(|n| &**n);
                 &node.data
@@ -568,17 +565,17 @@ pub mod stack {
                 '(' | '[' | '{' => {
                     stack.push(c);
                 }
-                 ')' => {
+                ')' => {
                     if stack.pop() != Some('(') {
                         return false;
                     }
                 }
-                 ']' => {
+                ']' => {
                     if stack.pop() != Some('[') {
                         return false;
                     }
                 }
-                 '}' => {
+                '}' => {
                     if stack.pop() != Some('{') {
                         return false;
                     }
@@ -740,24 +737,54 @@ pub mod hash_map {
 
         /// キーと値を挿入
         pub fn insert(&mut self, key: K, value: V) {
-            // TODO: 実装してください
-            // ヒント:
             // 1. hash(key) でバケットインデックスを取得
+            let index = self.hash(&key);
             // 2. そのバケットの中に同じキーがあるか確認
+            let bucket = &mut self.buckets[index];
             // 3. あれば値を更新、なければ新しいエントリを追加
+            for entry in bucket.iter_mut() {
+                if entry.key == key {
+                    entry.value = value;
+                    return;
+                }
+            }
             // 4. len をインクリメント
+            bucket.push_back(Entry { key, value });
+            self.len += 1;
             // 5. 負荷率をチェックして、必要なら resize
+            if self.load_factor() > 0.75 {
+                self.resize();
+            }
         }
 
         /// キーで値を取得
         pub fn get(&self, key: &K) -> Option<&V> {
-            unimplemented!("unimplemented")
+            let index = self.hash(key);
+            let bucket = &self.buckets[index];
+            for entry in bucket.iter() {
+                if &entry.key == key {
+                    return Some(&entry.value);
+                }
+            }
+            None
         }
 
         /// キーを削除
         pub fn remove(&mut self, key: &K) -> Option<V> {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            let index = self.hash(key);
+            let bucket = &mut self.buckets[index];
+            // entry を探して削除
+            // key を持つ entry の位置を把握
+            let position = bucket.iter().position(|entry| &entry.key == key)?;
+            // LinkedList をその位置で分割
+            let mut after = bucket.split_off(position);
+            // pop_front で取り出し
+            let removed = after.pop_front().unwrap();
+            // 分割して削除した後のLinkedListをバケットに追加
+            bucket.append(&mut after);
+
+            self.len -= 1;
+            Some(removed.value)
         }
 
         /// キーが存在するか確認
@@ -777,9 +804,31 @@ pub mod hash_map {
 
         /// リサイズ（チャレンジ課題）
         fn resize(&mut self) {
-            // TODO: 実装してください
-            // ヒント: 容量を2倍にして、すべての要素を再ハッシュ
-            unimplemented!("unimplemented")
+            // 1. 新しい容量を計算
+            let new_capacity = self.capacity * 2;
+
+            // 2. 新しいバケット配列を作成
+            let mut new_buckets = Vec::new();
+            for _ in 0..new_capacity {
+                new_buckets.push(LinkedList::new());
+            }
+
+            // 3. 古いバケットから全要素を取り出す
+            for bucket in self.buckets.iter_mut() {
+                while let Some(entry) = bucket.pop_front() {
+                    // 4. 新しい容量でハッシュ値を再計算
+                    let mut hasher = DefaultHasher::new();
+                    entry.key.hash(&mut hasher);
+                    let new_index = (hasher.finish() as usize) % new_capacity;
+
+                    // 5. 新しいバケットに挿入
+                    new_buckets[new_index].push_back(entry);
+                }
+            }
+
+            // 6. 古いバケットを新しいバケットで置き換え
+            self.buckets = new_buckets;
+            self.capacity = new_capacity;
         }
     }
 
@@ -788,7 +837,6 @@ pub mod hash_map {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_insert_and_get() {
             let mut map = SimpleHashMap::new();
             map.insert("apple", 100);
@@ -800,7 +848,6 @@ pub mod hash_map {
         }
 
         #[test]
-        #[ignore]
         fn test_update_value() {
             let mut map = SimpleHashMap::new();
             map.insert("key", 1);

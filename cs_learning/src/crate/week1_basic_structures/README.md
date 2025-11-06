@@ -329,6 +329,20 @@ hash = H0 || H1 || H2 || H3 || H4 || H5 || H6 || H7
        ↓
   最終ハッシュ値: b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 
+#### 負荷率(load factor)
+ハッシュマップのパフォーマンスの指標  
+
+負荷率 = 要素数 / バケット数
+
+```rust
+fn load_factor(&self) -> f64 {
+    self.len as f64 / self.capacity as f64
+}
+```
+
+ハッシュマップの容量に対して要素数が増える  
+-> 空きが少ないので衝突しやすくなる　　
+
 ## 💻 実装課題
 
 ### 課題1: 動的配列（Vec）の簡易実装
