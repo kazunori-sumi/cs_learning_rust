@@ -562,7 +562,32 @@ pub mod stack {
         // 1. 開き括弧が来たらスタックにプッシュ
         // 2. 閉じ括弧が来たらスタックからポップして対応を確認
         // 3. 最後にスタックが空なら true
-        unimplemented!("unimplemented")
+        let mut stack = Stack::new();
+        for c in s.chars() {
+            match c {
+                '(' | '[' | '{' => {
+                    stack.push(c);
+                }
+                 ')' => {
+                    if stack.pop() != Some('(') {
+                        return false;
+                    }
+                }
+                 ']' => {
+                    if stack.pop() != Some('[') {
+                        return false;
+                    }
+                }
+                 '}' => {
+                    if stack.pop() != Some('{') {
+                        return false;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        stack.is_empty()
     }
 
     #[cfg(test)]
@@ -583,7 +608,6 @@ pub mod stack {
         }
 
         #[test]
-        #[ignore]
         fn test_balanced_parentheses() {
             assert!(check_balanced_parentheses("()"));
             assert!(check_balanced_parentheses("()[]{}"));
