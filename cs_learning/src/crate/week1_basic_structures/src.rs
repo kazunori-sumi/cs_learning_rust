@@ -390,6 +390,25 @@ pub mod linked_list {
         pub fn push_back(&mut self, data: T) {
             // TODO: 実装してください（チャレンジ課題）
             // ヒント: 末尾まで辿る必要がある
+            let new_node = Box::new(Node {
+                data,
+                next: None,
+            });
+
+            match self.head {
+                None => {
+                    self.head = Some(new_node);
+                }
+                Some(ref mut head) => {
+                    let mut current = head;
+                    while current.next.is_some() {
+                        current = current.next.as_mut().unwrap();
+                    }
+
+                    current.next = Some(new_node);
+                }
+            }
+            self.len += 1;
         }
 
         /// 先頭の要素を参照
@@ -491,32 +510,36 @@ pub mod stack {
     impl<T> Stack<T> {
         /// 新しい空のスタックを作成
         pub fn new() -> Self {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            Stack { items: Vec::new() }
         }
 
         /// 要素をプッシュ
         pub fn push(&mut self, item: T) {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            self.items.push(item);
         }
 
         /// 要素をポップ
         pub fn pop(&mut self) -> Option<T> {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            if self.len() == 0 {
+                None
+            } else {
+                self.items.pop()
+            }
         }
 
         /// トップの要素を参照
         pub fn peek(&self) -> Option<&T> {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            if self.is_empty() {
+                None
+            } else {
+                let last_item = &self.items[self.len() - 1];
+                Some(last_item)
+            }
         }
 
         /// 空かどうか
         pub fn is_empty(&self) -> bool {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            self.len() == 0
         }
 
         /// 要素数
@@ -547,7 +570,6 @@ pub mod stack {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_stack_operations() {
             let mut stack = Stack::new();
             stack.push(1);
