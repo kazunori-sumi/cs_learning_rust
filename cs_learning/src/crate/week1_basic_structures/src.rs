@@ -631,27 +631,31 @@ pub mod queue {
     impl<T> Queue<T> {
         /// 新しい空のキューを作成
         pub fn new() -> Self {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            Self { items: Vec::new() }
         }
 
         /// 要素をエンキュー（末尾に追加）
         pub fn enqueue(&mut self, item: T) {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            self.items.push(item)
         }
 
         /// 要素をデキュー（先頭から削除）
         pub fn dequeue(&mut self) -> Option<T> {
-            // TODO: 実装してください
             // 注意: Vec::remove(0) は O(n) なので、後でリングバッファ版も実装してみよう
-            unimplemented!("unimplemented")
+            if self.len() > 0 {
+                Some(self.items.remove(0))
+            } else {
+                None
+            }
         }
 
         /// 先頭の要素を参照
         pub fn peek(&self) -> Option<&T> {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            if self.len() > 0 {
+                Some(&self.items[0])
+            } else {
+                None
+            }
         }
 
         /// 空かどうか
@@ -670,7 +674,6 @@ pub mod queue {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_queue_operations() {
             let mut queue = Queue::new();
             queue.enqueue(1);
