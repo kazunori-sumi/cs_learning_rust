@@ -351,7 +351,7 @@ pub mod linked_list {
         head: Option<Box<Node<T>>>,
         len: usize,
     }
-
+    
     impl<T> LinkedList<T> {
         /// 新しい空のリストを作成
         pub fn new() -> Self {
@@ -360,18 +360,30 @@ pub mod linked_list {
 
         /// 先頭に要素を追加
         pub fn push_front(&mut self, data: T) {
-            // TODO: 実装してください
-            // ヒント:
             // 1. 新しいノードを作成
             // 2. 新しいノードの next に現在の head を設定
+            let new_node = Node {
+                data,
+                next: self.head.take()
+            };
             // 3. head を新しいノードに更新
+            self.head = Some(Box::new(new_node));
             // 4. len をインクリメント
+            self.len += 1;
         }
 
         /// 先頭の要素を削除して返す
         pub fn pop_front(&mut self) -> Option<T> {
-            // TODO: 実装してください
-            unimplemented!("unimplemented")
+            // match で先頭ノードを評価
+            match self.head.take() {
+                Some(node) => {
+                                // 新たな head に取り出した Node.next をセット
+                                self.head = node.next;
+                                self.len -= 1;
+                                Some(node.data)
+                            }
+                None => None,
+            }
         }
 
         /// 末尾に要素を追加
@@ -393,6 +405,27 @@ pub mod linked_list {
         /// 空かどうか
         pub fn is_empty(&self) -> bool {
             self.head.is_none()
+        }
+
+        pub fn iter(&self) -> Iter<T> {
+            Iter {
+                current: self.head.as_ref().map(|node| &**node),
+            }
+        }
+    }
+
+    pub struct Iter<'a, T> {
+        current: Option<&'a Node<T>>,
+    }
+
+    impl<'a, T> Iterator for Iter<'a, T> {
+        type Item = &'a T;
+
+        fn next(&mut self) -> Option<Self::Item>{
+            self.current.map(|node| {
+                self.current = node.next.as_ref().map(|n| &**n);
+                &node.data
+            })
         }
     }
 
@@ -421,7 +454,6 @@ pub mod linked_list {
         }
 
         #[test]
-        #[ignore]
         fn test_push_front() {
             let mut list = LinkedList::new();
             list.push_front(1);
@@ -433,7 +465,6 @@ pub mod linked_list {
         }
 
         #[test]
-        #[ignore]
         fn test_pop_front() {
             let mut list = LinkedList::new();
             list.push_front(1);

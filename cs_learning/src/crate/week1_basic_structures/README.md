@@ -349,7 +349,6 @@ hash = H0 || H1 || H2 || H3 || H4 || H5 || H6 || H7
 ### 課題2: 単方向連結リスト
 
 `LinkedList<T>`を実装してください:
-- `new()`: 新しいリストを作成
 - `push_front(item)`: 先頭に追加
 - `push_back(item)`: 末尾に追加
 - `pop_front()`: 先頭から削除
