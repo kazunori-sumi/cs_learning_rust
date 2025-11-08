@@ -17,9 +17,12 @@ pub mod search {
     /// assert_eq!(linear_search(&arr, &8), Some(2));
     /// ```
     pub fn linear_search<T: PartialEq>(arr: &[T], target: &T) -> Option<usize> {
-        // TODO: 実装してください
-        // ヒント: 配列を先頭から順番に探索
-        todo!()
+        for i in 0..arr.len() {
+            if &arr[i] == target {
+                return Some(i);
+            }
+        }
+        None
     }
 
     /// 二分探索（反復版）
@@ -71,7 +74,6 @@ pub mod search {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_linear_search() {
             let arr = vec![5, 2, 8, 1, 9];
             assert_eq!(linear_search(&arr, &8), Some(2));
@@ -80,7 +82,6 @@ pub mod search {
         }
 
         #[test]
-        #[ignore]
         fn test_linear_search_empty() {
             let arr: Vec<i32> = vec![];
             assert_eq!(linear_search(&arr, &5), None);
