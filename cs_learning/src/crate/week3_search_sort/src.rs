@@ -40,15 +40,26 @@ pub mod search {
     /// assert_eq!(binary_search(&arr, &5), Some(2));
     /// ```
     pub fn binary_search<T: Ord>(arr: &[T], target: &T) -> Option<usize> {
-        // TODO: 実装してください
-        // ヒント:
         // 1. left = 0, right = arr.len() - 1
         // 2. while left <= right
         // 3.   mid = (left + right) / 2
         // 4.   arr[mid] と target を比較
         // 5.   target が小さければ右半分を捨てる（right = mid - 1）
         // 6.   target が大きければ左半分を捨てる（left = mid + 1）
-        todo!()
+        let mut left = 0;
+        let mut right = arr.len() - 1;
+        while left <= right {
+            let mid = (left + right) / 2;
+            if &arr[mid] < target {
+                left = mid + 1;
+            } else if &arr[mid] > target {
+                right = mid - 1;
+            } else {
+                return Some(mid);
+            }
+        }
+
+        None
     }
 
     /// 二分探索（再帰版）
@@ -57,10 +68,32 @@ pub mod search {
     /// - 時間: O(log n)
     /// - 空間: O(log n)（再帰スタック）
     pub fn binary_search_recursive<T: Ord>(arr: &[T], target: &T) -> Option<usize> {
-        fn search_helper<T: Ord>(arr: &[T], target: &T, left: usize, right: usize) -> Option<usize> {
-            // TODO: 実装してください
-            // ヒント: 再帰的に探索範囲を半分にする
-            todo!()
+        fn search_helper<T: Ord>(
+            arr: &[T],
+            target: &T,
+            left: usize,
+            right: usize,
+        ) -> Option<usize> {
+            if left > right {
+                // 忘れないようにすること
+                return None;
+            }
+            let mid = (left + right) / 2;
+            if &arr[mid] == target {
+                return Some(mid);
+            }
+            if &arr[mid] < target {
+                return search_helper(arr, target, mid + 1, right);
+            } else if &arr[mid] > target {
+                // mid - 1 によるアンダーフロー対策
+                if let Some(new_right) = mid.checked_sub(1) {
+                    return search_helper(arr, target, left, new_right);
+                } else {
+                    return None;
+                }
+            } else {
+                return None;
+            }
         }
 
         if arr.is_empty() {
@@ -88,7 +121,6 @@ pub mod search {
         }
 
         #[test]
-        #[ignore]
         fn test_binary_search() {
             let arr = vec![1, 2, 5, 8, 9];
             assert_eq!(binary_search(&arr, &5), Some(2));
@@ -98,7 +130,6 @@ pub mod search {
         }
 
         #[test]
-        #[ignore]
         fn test_binary_search_recursive() {
             let arr = vec![1, 2, 5, 8, 9];
             assert_eq!(binary_search_recursive(&arr, &5), Some(2));
