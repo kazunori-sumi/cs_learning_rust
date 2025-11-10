@@ -156,12 +156,17 @@ pub mod basic_sorts {
     /// 隣接する要素を比較し、順番が逆なら交換する。
     /// 最大値が配列の最後まで「浮かび上がる」様子からバブルソートと呼ばれる。
     pub fn bubble_sort<T: Ord>(arr: &mut [T]) {
-        // TODO: 実装してください
-        // ヒント:
         // 1. 外側のループ: n-1 回
         // 2. 内側のループ: 隣接要素を比較
         // 3. 順番が逆なら swap
-        todo!()
+        let last_idx = arr.len() - 1;
+        for i in 0..last_idx {
+            for j in 0..last_idx - i {
+                if arr[j] > arr[j+1] {
+                    arr.swap(j, j+1); // 一時変数を使った場合はTがCopyトレイトを実装するような制限が必要
+                }
+            }
+        }
     }
 
     /// バブルソート（最適化版）
@@ -215,7 +220,6 @@ pub mod basic_sorts {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_bubble_sort() {
             let mut arr = vec![5, 2, 8, 1, 9];
             bubble_sort(&mut arr);
