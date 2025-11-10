@@ -162,8 +162,8 @@ pub mod basic_sorts {
         let last_idx = arr.len() - 1;
         for i in 0..last_idx {
             for j in 0..last_idx - i {
-                if arr[j] > arr[j+1] {
-                    arr.swap(j, j+1); // 一時変数を使った場合はTがCopyトレイトを実装するような制限が必要
+                if arr[j] > arr[j + 1] {
+                    arr.swap(j, j + 1); // 一時変数を使った場合はTがCopyトレイトを実装するような制限が必要
                 }
             }
         }
