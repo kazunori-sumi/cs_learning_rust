@@ -175,7 +175,19 @@ pub mod basic_sorts {
     pub fn bubble_sort_optimized<T: Ord>(arr: &mut [T]) {
         // TODO: チャレンジ課題
         // ヒント: swapped フラグを使う
-        todo!()
+        let last_idx = arr.len() - 1;
+        let mut swapped = false;
+        for i in 0..last_idx - 1 {
+            for j in 0..last_idx - i {
+                if arr[j] > arr[j + 1] {
+                    swapped = true;
+                    arr.swap(j, j + 1);
+                }
+            }
+            if !swapped {
+                break;
+            }
+        }
     }
 
     /// 選択ソート
@@ -227,7 +239,6 @@ pub mod basic_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_bubble_sort_optimized() {
             let mut arr = vec![5, 2, 8, 1, 9];
             bubble_sort_optimized(&mut arr);
