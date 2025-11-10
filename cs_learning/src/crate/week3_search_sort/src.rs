@@ -200,12 +200,18 @@ pub mod basic_sorts {
     /// # アルゴリズム
     /// 未ソート部分から最小値を見つけて、先頭に移動する。
     pub fn selection_sort<T: Ord>(arr: &mut [T]) {
-        // TODO: 実装してください
         // ヒント:
         // 1. 外側のループ: i = 0 to n-1
         // 2. 未ソート部分 (i..n) から最小値のインデックスを見つける
         // 3. arr[i] と arr[min_index] を交換
-        todo!()
+        let last_idx = arr.len() - 1;
+        for i in 0..last_idx {
+            for j in i..last_idx {
+                if arr[i] > arr[j] {
+                    arr.swap(i, j);
+                }
+            }
+        }
     }
 
     /// 挿入ソート
@@ -251,7 +257,6 @@ pub mod basic_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_selection_sort() {
             let mut arr = vec![5, 2, 8, 1, 9];
             selection_sort(&mut arr);
