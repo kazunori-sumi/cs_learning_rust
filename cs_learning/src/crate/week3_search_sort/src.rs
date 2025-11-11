@@ -174,8 +174,8 @@ pub mod basic_sorts {
     /// 交換が発生しなかった場合、既にソート済みなので終了する
     pub fn bubble_sort_optimized<T: Ord>(arr: &mut [T]) {
         let last_idx = arr.len() - 1;
-        let mut swapped = false;
-        for i in 0..last_idx - 1 {
+        for i in 0..last_idx {
+            let mut swapped = false;
             for j in 0..last_idx - i {
                 if arr[j] > arr[j + 1] {
                     swapped = true;
@@ -236,6 +236,29 @@ pub mod basic_sorts {
         }
     }
 
+    // テスト用：比較回数とswap回数をカウントするバージョン
+    fn bubble_sort_optimized_with_count<T: Ord>(arr: &mut [T]) -> (usize, usize) {
+        let last_idx = arr.len() - 1;
+        let mut comparisons = 0;
+        let mut swaps = 0;
+
+        for i in 0..last_idx {
+            let mut swapped = false;
+            for j in 0..last_idx - i {
+                comparisons += 1;
+                if arr[j] > arr[j + 1] {
+                    swapped = true;
+                    arr.swap(j, j + 1);
+                    swaps += 1;
+                }
+            }
+            if !swapped {
+                break;
+            }
+        }
+        (comparisons, swaps)
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -257,6 +280,59 @@ pub mod basic_sorts {
             let mut arr = vec![1, 2, 3, 5, 4];
             bubble_sort_optimized(&mut arr);
             assert_eq!(arr, vec![1, 2, 3, 4, 5]);
+        }
+
+        #[test]
+        fn test_bubble_sort_optimized_early_termination() {
+            // 既にソート済みの配列
+            let mut arr = vec![1, 2, 3, 4, 5];
+            let (comparisons, swaps) = bubble_sort_optimized_with_count(&mut arr);
+            assert_eq!(arr, vec![1, 2, 3, 4, 5]);
+
+            // 最適化が機能していれば、1パス（n-1回の比較）で終了するはず
+            // 期待値: 4回の比較、0回のswap
+            println!(
+                "ソート済み配列: comparisons={}, swaps={}",
+                comparisons, swaps
+            );
+            assert_eq!(swaps, 0, "ソート済み配列なのでswapは0回のはず");
+            assert_eq!(
+                comparisons, 4,
+                "最適化が機能していれば1パス(4回)で終了するはず"
+            );
+
+            // ほぼソート済み（1箇所だけ乱れている）
+            let mut arr = vec![1, 2, 3, 5, 4];
+            let (comparisons, swaps) = bubble_sort_optimized_with_count(&mut arr);
+            assert_eq!(arr, vec![1, 2, 3, 4, 5]);
+
+            // 最適化が機能していれば、2パスで終了するはず
+            // 1パス目: 4回比較、1回swap → [1,2,3,4,5]
+            // 2パス目: 3回比較、0回swap → 早期終了
+            // 期待値: 7回の比較、1回のswap
+            println!(
+                "ほぼソート済み配列: comparisons={}, swaps={}",
+                comparisons, swaps
+            );
+            assert_eq!(swaps, 1, "1箇所の乱れなので1回のswapのはず");
+            // このテストが失敗したら、最適化が機能していない証拠
+            assert!(
+                comparisons <= 7,
+                "最適化が機能していれば7回以下の比較で終了するはず。実際: {}回",
+                comparisons
+            );
+        }
+
+        #[test]
+        fn test_bubble_sort_optimized_reverse_array() {
+            // 逆順配列（最悪ケース）- ループ回数不足のバグを検出
+            let mut arr = vec![5, 4, 3, 2, 1];
+            bubble_sort_optimized(&mut arr);
+            assert_eq!(
+                arr,
+                vec![1, 2, 3, 4, 5],
+                "逆順配列が正しくソートされていない"
+            );
         }
 
         #[test]
