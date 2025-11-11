@@ -173,8 +173,6 @@ pub mod basic_sorts {
     ///
     /// 交換が発生しなかった場合、既にソート済みなので終了する
     pub fn bubble_sort_optimized<T: Ord>(arr: &mut [T]) {
-        // TODO: チャレンジ課題
-        // ヒント: swapped フラグを使う
         let last_idx = arr.len() - 1;
         let mut swapped = false;
         for i in 0..last_idx - 1 {
@@ -200,7 +198,6 @@ pub mod basic_sorts {
     /// # アルゴリズム
     /// 未ソート部分から最小値を見つけて、先頭に移動する。
     pub fn selection_sort<T: Ord>(arr: &mut [T]) {
-        // ヒント:
         // 1. 外側のループ: i = 0 to n-1
         // 2. 未ソート部分 (i..n) から最小値のインデックスを見つける
         // 3. arr[i] と arr[min_index] を交換
@@ -224,13 +221,19 @@ pub mod basic_sorts {
     /// # アルゴリズム
     /// 要素を1つずつ取り出し、ソート済み部分の適切な位置に挿入する。
     pub fn insertion_sort<T: Ord>(arr: &mut [T]) {
-        // TODO: 実装してください
-        // ヒント:
         // 1. i = 1 から開始（arr[0] はソート済みとみなす）
         // 2. arr[i] を取り出す
         // 3. ソート済み部分で適切な位置を見つける
         // 4. 要素をシフトして挿入
-        todo!()
+
+        for i in 1..arr.len() {
+            let mut j = i;
+            // 後ろから前に比較し、arr[j]が適切な位置に来るまでswap
+            while j > 0 && arr[j - 1] > arr[j] {
+                arr.swap(j - 1, j);
+                j -= 1;
+            }
+        }
     }
 
     #[cfg(test)]
@@ -264,7 +267,6 @@ pub mod basic_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_insertion_sort() {
             let mut arr = vec![5, 2, 8, 1, 9];
             insertion_sort(&mut arr);
