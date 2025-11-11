@@ -173,19 +173,7 @@ pub mod basic_sorts {
     ///
     /// 交換が発生しなかった場合、既にソート済みなので終了する
     pub fn bubble_sort_optimized<T: Ord>(arr: &mut [T]) {
-        let last_idx = arr.len() - 1;
-        for i in 0..last_idx {
-            let mut swapped = false;
-            for j in 0..last_idx - i {
-                if arr[j] > arr[j + 1] {
-                    swapped = true;
-                    arr.swap(j, j + 1);
-                }
-            }
-            if !swapped {
-                break;
-            }
-        }
+        bubble_sort_optimized_with_count(arr);
     }
 
     /// 選択ソート
