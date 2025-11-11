@@ -517,21 +517,12 @@ pub mod stack {
 
         /// 要素をポップ
         pub fn pop(&mut self) -> Option<T> {
-            if self.len() == 0 {
-                None
-            } else {
-                self.items.pop()
-            }
+            self.items.pop()
         }
 
         /// トップの要素を参照
         pub fn peek(&self) -> Option<&T> {
-            if self.is_empty() {
-                None
-            } else {
-                let last_item = &self.items[self.len() - 1];
-                Some(last_item)
-            }
+            self.items.last()
         }
 
         /// 空かどうか
