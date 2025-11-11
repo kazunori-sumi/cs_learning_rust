@@ -189,7 +189,17 @@ pub mod basic_sorts {
         // 1. 外側のループ: i = 0 to n-1
         // 2. 未ソート部分 (i..n) から最小値のインデックスを見つける
         // 3. arr[i] と arr[min_index] を交換
-        todo!()
+        for i in 0..arr.len() - 1 {
+            let mut min_idx = i;
+            for j in (i + 1)..arr.len() {
+                if arr[j] < arr[min_idx] {
+                    min_idx = j;
+                }
+            }
+            if min_idx != i {
+                arr.swap(i, min_idx);
+            }
+        }
     }
 
     /// 挿入ソート
