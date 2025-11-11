@@ -189,14 +189,7 @@ pub mod basic_sorts {
         // 1. 外側のループ: i = 0 to n-1
         // 2. 未ソート部分 (i..n) から最小値のインデックスを見つける
         // 3. arr[i] と arr[min_index] を交換
-        let last_idx = arr.len() - 1;
-        for i in 0..last_idx {
-            for j in i..last_idx {
-                if arr[i] > arr[j] {
-                    arr.swap(i, j);
-                }
-            }
-        }
+        todo!()
     }
 
     /// 挿入ソート
@@ -381,10 +374,11 @@ pub mod advanced_sorts {
         // TODO: 実装してください
         // ヒント:
         // 1. 配列が1要素以下なら終了
-        // 2. 配列を半分に分割
-        // 3. 左半分を再帰的にソート
-        // 4. 右半分を再帰的にソート
-        // 5. 2つのソート済み配列をマージ
+        // 2. 配列を半分に分割（mid = arr.len() / 2）
+        // 3. 左半分を再帰的にソート（&mut arr[..mid]）
+        // 4. 右半分を再帰的にソート（&mut arr[mid..]）
+        // 5. 2つのソート済み配列をマージ（merge関数使用）
+        // 6. マージ結果を元の配列にコピーバック（arr.copy_from_slice）
         todo!()
     }
 
@@ -410,18 +404,26 @@ pub mod advanced_sorts {
     pub fn quick_sort<T: Ord>(arr: &mut [T]) {
         // TODO: 実装してください
         // ヒント:
-        // 1. 配列が1要素以下なら終了
-        // 2. ピボットを選ぶ（最後の要素など）
-        // 3. partition: ピボットより小さい要素を左、大きい要素を右に
-        // 4. 左側を再帰的にソート
-        // 5. 右側を再帰的にソート
+        // 1. 配列が1要素以下なら終了（arr.len() <= 1）
+        // 2. partition関数を呼び出してピボット位置を取得
+        // 3. 左側を再帰的にソート（&mut arr[..pivot_pos]）
+        // 4. 右側を再帰的にソート（&mut arr[pivot_pos + 1..]）
         todo!()
     }
 
     /// パーティション操作（クイックソートの補助関数）
-    fn partition<T: Ord>(arr: &mut [T], low: usize, high: usize) -> usize {
+    ///
+    /// 配列の最後の要素をピボットとして、ピボットより小さい要素を左、
+    /// 大きい要素を右に分割し、ピボットの最終位置を返す。
+    fn partition<T: Ord>(arr: &mut [T]) -> usize {
         // TODO: 実装してください
-        // ヒント: Lomuto partition scheme または Hoare partition scheme
+        // ヒント（Lomuto partition scheme）:
+        // 1. ピボット = 最後の要素（arr[arr.len() - 1]）
+        // 2. i = -1（小さい要素の境界）
+        // 3. j = 0 から arr.len() - 2 まで繰り返す:
+        //    - arr[j] <= ピボット なら i++, swap(arr[i], arr[j])
+        // 4. swap(arr[i + 1], arr[arr.len() - 1])
+        // 5. return i + 1
         todo!()
     }
 
@@ -434,17 +436,27 @@ pub mod advanced_sorts {
     pub fn heap_sort<T: Ord>(arr: &mut [T]) {
         // TODO: チャレンジ課題
         // ヒント:
-        // 1. 配列を最大ヒープに変換（heapify）
-        // 2. 最大値（ルート）を配列の最後と交換
-        // 3. ヒープサイズを1減らす
-        // 4. ルートから再度heapify
-        // 5. ヒープサイズが1になるまで繰り返す
+        // 1. 配列を最大ヒープに変換（i = n/2 - 1 から 0 まで heapify を呼ぶ）
+        // 2. ヒープサイズ n から 1 まで繰り返す:
+        //    a. 最大値（arr[0]）を配列の最後（arr[n-1]）と交換
+        //    b. ヒープサイズを1減らす
+        //    c. ルート（0）に対して heapify を実行
         todo!()
     }
 
-    /// ヒープの性質を維持する補助関数
+    /// ヒープの性質を維持する補助関数（sift_down操作）
+    ///
+    /// インデックス i を根とする部分木を最大ヒープにする。
+    /// n はヒープのサイズ（配列全体のサイズではない場合がある）。
     fn heapify<T: Ord>(arr: &mut [T], n: usize, i: usize) {
         // TODO: チャレンジ課題
+        // ヒント:
+        // 1. largest = i（現在の最大値）
+        // 2. left = 2 * i + 1（左の子）
+        // 3. right = 2 * i + 2（右の子）
+        // 4. left < n かつ arr[left] > arr[largest] なら largest = left
+        // 5. right < n かつ arr[right] > arr[largest] なら largest = right
+        // 6. largest != i なら swap(arr[i], arr[largest]) して heapify(arr, n, largest) を再帰呼び出し
         todo!()
     }
 
@@ -490,6 +502,54 @@ pub mod advanced_sorts {
             let mut arr = vec![3, 1, 4, 1, 5, 9, 2, 6, 5];
             quick_sort(&mut arr);
             assert_eq!(arr, vec![1, 1, 2, 3, 4, 5, 5, 6, 9]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_merge_sort_empty() {
+            let mut arr: Vec<i32> = vec![];
+            merge_sort(&mut arr);
+            assert_eq!(arr, vec![]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_quick_sort_empty() {
+            let mut arr: Vec<i32> = vec![];
+            quick_sort(&mut arr);
+            assert_eq!(arr, vec![]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_heap_sort_empty() {
+            let mut arr: Vec<i32> = vec![];
+            heap_sort(&mut arr);
+            assert_eq!(arr, vec![]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_merge_sort_single() {
+            let mut arr = vec![42];
+            merge_sort(&mut arr);
+            assert_eq!(arr, vec![42]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_quick_sort_single() {
+            let mut arr = vec![42];
+            quick_sort(&mut arr);
+            assert_eq!(arr, vec![42]);
+        }
+
+        #[test]
+        #[ignore]
+        fn test_heap_sort_single() {
+            let mut arr = vec![42];
+            heap_sort(&mut arr);
+            assert_eq!(arr, vec![42]);
         }
     }
 }
