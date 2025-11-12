@@ -349,7 +349,6 @@ pub mod basic_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_sort_single_element() {
             let mut arr = vec![42];
             selection_sort(&mut arr);
@@ -357,7 +356,6 @@ pub mod basic_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_sort_already_sorted() {
             let mut arr = vec![1, 2, 3, 4, 5];
             insertion_sort(&mut arr);
