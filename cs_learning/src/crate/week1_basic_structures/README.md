@@ -461,6 +461,1074 @@ mod tests {
 - [The Rustonomicon](https://doc.rust-lang.org/nomicon/) - Unsafe Rustについて
 - [std::collections のドキュメント](https://doc.rust-lang.org/std/collections/)
 
+## 🎓 理解度確認問題
+
+次のステップに進む前に、以下の問題に答えて理解度を確認してください。
+
+### カテゴリ1: メモリと計算量の理解
+
+#### 問題1.1: 配列とVecのメモリレイアウト
+以下の質問に答えてください：
+1. 配列 `[i32; 5]` とベクター `Vec<i32>` のメモリ配置の違いを説明してください
+2. `Vec<i32>` のメタデータ（ptr, len, cap）はそれぞれ何バイトですか？（64ビットシステムの場合）
+
+<details>
+<summary>解答例</summary>
+
+**1. メモリ配置の違い**:
+
+```
+配列 [i32; 5]:
+┌─────────────────────────┐
+│ スタック                 │
+│  [0][1][2][3][4]        │  20バイト (i32 × 5)
+│  連続配置               │
+└─────────────────────────┘
+
+Vec<i32>:
+┌─────────────────────────┐
+│ スタック                 │
+│  ptr: *mut i32          │  8バイト
+│  len: usize             │  8バイト
+│  cap: usize             │  8バイト
+└────────┬────────────────┘
+         │
+         ↓
+┌─────────────────────────┐
+│ ヒープ                   │
+│  [0][1][2][3][4]        │  可変サイズ
+└─────────────────────────┘
+```
+
+**2. メタデータのサイズ**（64ビットシステム）:
+- ptr: 8バイト（ポインタ）
+- len: 8バイト（usize）
+- cap: 8バイト（usize）
+- 合計: 24バイト
+
+**重要な違い**:
+- 配列: コンパイル時にサイズ確定、スタック配置
+- Vec: 実行時にサイズ可変、ヒープ配置
+- Vecはメタデータのオーバーヘッドがある
+</details>
+
+#### 問題1.2: データ構造の操作の計算量
+以下の操作の計算量を答えてください：
+
+| 操作 | Vec | LinkedList | HashMap |
+|-----|-----|-----------|---------|
+| インデックスアクセス | ? | ? | N/A |
+| 末尾への追加 | ? | ? | ? |
+| 先頭への追加 | ? | ? | N/A |
+| 中間への挿入 | ? | ? | N/A |
+| 探索 | ? | ? | ? |
+
+<details>
+<summary>解答例</summary>
+
+| 操作 | Vec | LinkedList | HashMap |
+|-----|-----|-----------|---------|
+| **インデックスアクセス** | O(1) | O(n) | N/A |
+| **末尾への追加** | O(1)* | O(n)** | O(1)*** |
+| **先頭への追加** | O(n) | O(1) | N/A |
+| **中間への挿入** | O(n) | O(1)**** | N/A |
+| **探索** | O(n) | O(n) | O(1)*** |
+
+\* 償却計算量。容量拡張時は O(n)
+\*\* 単方向リストで末尾ポインタなしの場合
+\*\*\* 平均ケース。最悪ケースは O(n)（衝突時）
+\*\*\*\* 挿入位置が既知の場合
+
+**重要な考察**:
+- **Vec**: 連続メモリでキャッシュ効率が良い。末尾操作が高速。
+- **LinkedList**: ノード間が飛び飛びでキャッシュミス多発。現代では非推奨。
+- **HashMap**: キー based アクセスに最適。順序は保証されない。
+</details>
+
+#### 問題1.3: Vecの容量拡張
+`Vec::push()` を10回呼んだ場合、メモリの再アロケーションは何回発生しますか？また、最終的な容量は？
+
+<details>
+<summary>解答例</summary>
+
+**前提**: 初期容量0、拡張戦略は「容量を2倍にする」
+
+```
+push 1回目: cap=0 → 1  (再アロケーション) len=1, cap=1
+push 2回目: cap=1 → 2  (再アロケーション) len=2, cap=2
+push 3回目: cap=2 → 4  (再アロケーション) len=3, cap=4
+push 4回目: len=4, cap=4（拡張不要）
+push 5回目: cap=4 → 8  (再アロケーション) len=5, cap=8
+push 6-8回目: 拡張不要
+push 9回目: cap=8 → 16 (再アロケーション) len=9, cap=16
+push 10回目: len=10, cap=16（拡張不要）
+```
+
+**答え**:
+- 再アロケーション回数: **5回**
+- 最終容量: **16**
+
+**償却計算量**:
+- 個々の push は最悪 O(n) だが、償却すると O(1)
+- n 回の push で、再アロケーションは log n 回のみ
+
+**最適化**:
+事前に要素数がわかっている場合は `Vec::with_capacity(n)` を使う
+</details>
+
+#### 問題1.4: キャッシュ効率
+なぜ連結リストは現代のプログラミングで推奨されないのか、キャッシュの観点から説明してください。
+
+<details>
+<summary>解答例</summary>
+
+**連結リストの問題点**:
+
+1. **空間的局所性の欠如**
+```
+Vec:  [0][1][2][3][4]  ← 連続配置
+      ↑ 1回のキャッシュラインで複数要素を取得
+
+LinkedList:
+[Node0]     [Node2]     [Node1]     [Node3]
+  ↓           ↓           ↓           ↓
+ヒープのランダムな位置に分散
+→ 各ノードアクセスでキャッシュミス
+```
+
+2. **メモリオーバーヘッド**
+```
+Vec<i32>:
+  要素1個あたり: 4バイト
+
+LinkedList<i32>:
+  要素1個あたり: 4バイト (data) + 8バイト (next) = 12バイト
+  → 3倍のメモリ使用
+```
+
+3. **現代CPUの最適化**
+- CPU: プリフェッチ、投機実行が連続メモリで効果的
+- キャッシュライン: 通常64バイト。Vecなら連続する要素をまとめて取得
+
+**実測データ**（n=1,000,000の反復アクセス）:
+- Vec: ~5ms
+- LinkedList: ~150ms（30倍遅い）
+
+**結論**:
+挿入・削除が O(1) でも、実用上は Vec の O(n) 挿入の方が高速なことが多い。
+</details>
+
+---
+
+### カテゴリ2: データ構造の特性理解
+
+#### 問題2.1: スタックとキューの応用
+以下のアプリケーションで、スタック（LIFO）とキュー（FIFO）のどちらが適切か答えてください：
+
+1. ブラウザの「戻る」ボタン
+2. プリンタのジョブ管理
+3. 関数の呼び出し履歴
+4. 幅優先探索（BFS）
+5. 深さ優先探索（DFS）
+6. Undo/Redo機能
+
+<details>
+<summary>解答例</summary>
+
+| アプリケーション | データ構造 | 理由 |
+|---------------|----------|------|
+| **1. ブラウザの「戻る」ボタン** | Stack | 最後に訪れたページから戻る（LIFO） |
+| **2. プリンタのジョブ管理** | Queue | 先に送られたジョブから処理（FIFO） |
+| **3. 関数の呼び出し履歴** | Stack | 最後に呼ばれた関数から戻る（LIFO） |
+| **4. 幅優先探索（BFS）** | Queue | 同じ深さのノードを先に処理（FIFO） |
+| **5. 深さ優先探索（DFS）** | Stack | 深く潜ってから戻る（LIFO） |
+| **6. Undo/Redo機能** | 2つのStack | Undo stack + Redo stack |
+
+**詳細: Undo/Redo**
+```
+操作履歴: A → B → C
+          ↑ 現在
+
+Undo実行:
+  Undo Stack: [A, B, C] → [A, B]
+  Redo Stack: [] → [C]
+
+Redo実行:
+  Undo Stack: [A, B] → [A, B, C]
+  Redo Stack: [C] → []
+```
+</details>
+
+#### 問題2.2: ハッシュマップの衝突解決
+チェイニング方式とオープンアドレッシング方式の違いを説明し、それぞれの長所・短所を述べてください。
+
+<details>
+<summary>解答例</summary>
+
+**1. チェイニング方式**
+
+```
+buckets:
+[0] → [("apple", 1)] → [("banana", 2)]
+[1] → None
+[2] → [("cherry", 3)]
+[3] → [("date", 4)] → [("elderberry", 5)]
+```
+
+**仕組み**: 各バケットに連結リストを持ち、衝突した要素を同じバケットに追加
+
+**長所**:
+- 実装がシンプル
+- 負荷率が1を超えても動作する
+- 削除が簡単
+
+**短所**:
+- ポインタのオーバーヘッド
+- キャッシュ効率が悪い（連結リスト）
+- メモリの断片化
+
+---
+
+**2. オープンアドレッシング方式**
+
+```
+buckets:
+[0] → ("apple", 1)
+[1] → ("banana", 2)    ← "banana" の本来の位置は 0 だが衝突
+[2] → ("cherry", 3)
+[3] → None
+```
+
+**仕組み**: 衝突時、別の空きバケットを探す（線形探査、二次探査、二重ハッシュ）
+
+**長所**:
+- メモリ効率が良い（ポインタ不要）
+- キャッシュ効率が良い（連続配置）
+- 小さいデータに最適
+
+**短所**:
+- 負荷率が高いと性能劣化
+- 削除が複雑（tombstone必要）
+- クラスタリング問題
+
+---
+
+**実用的な選択**:
+- **Rustの `std::collections::HashMap`**: オープンアドレッシング（Robin Hood hashing）
+- **Pythonの `dict`**: オープンアドレッシング
+- **Javaの `HashMap`**: チェイニング
+
+**負荷率の推奨値**:
+- チェイニング: 0.75以下
+- オープンアドレッシング: 0.5以下
+</details>
+
+#### 問題2.3: 負荷率（Load Factor）
+ハッシュマップの負荷率が 0.9 の場合と 0.5 の場合で、操作の性能にどのような違いがありますか？
+
+<details>
+<summary>解答例</summary>
+
+**負荷率の定義**: `負荷率 = 要素数 / バケット数`
+
+**負荷率 0.5 の場合**:
+- 要素数: 50、バケット数: 100
+- 衝突確率: 低い
+- 探索: ほぼ O(1)
+- メモリ使用量: 多い
+
+**負荷率 0.9 の場合**:
+- 要素数: 90、バケット数: 100
+- 衝突確率: 高い
+- 探索: O(1) に近いが劣化
+- メモリ使用量: 少ない
+
+**具体例**（チェイニング方式）:
+
+```
+負荷率 0.5:
+[0] → ("a", 1)
+[1] → None
+[2] → ("b", 2)
+[3] → None
+...
+平均チェーン長: 0.5
+
+負荷率 0.9:
+[0] → ("a", 1) → ("b", 2)
+[1] → ("c", 3)
+[2] → ("d", 4) → ("e", 5) → ("f", 6)
+[3] → ("g", 7)
+...
+平均チェーン長: 0.9
+```
+
+**パフォーマンス**:
+- 探索の期待値: 負荷率に比例
+- 負荷率 0.9: 平均0.9個のノードを辿る
+- 負荷率 0.5: 平均0.5個のノードを辿る
+
+**トレードオフ**:
+- 低負荷率（0.5）: 速度↑ メモリ使用量↑
+- 高負荷率（0.9）: 速度↓ メモリ使用量↓
+
+**実用的な設定**:
+- デフォルト: 0.75（速度とメモリのバランス）
+- メモリ重視: 0.9
+- 速度重視: 0.5
+</details>
+
+---
+
+### カテゴリ3: データ構造の選択問題
+
+#### 問題3.1: 実践シナリオ1
+Webサーバーで、最近アクセスされた10,000件のURLを記録し、重複チェックを高速に行いたい。どのデータ構造を使うべきか？
+
+<details>
+<summary>解答例</summary>
+
+**推奨**: **HashSet**（または HashMap<URL, ()>）
+
+**理由**:
+1. **重複チェックが O(1)**
+   - Vec での線形探索: O(n) = 10,000回の比較
+   - HashSet: O(1) = 数回のハッシュ計算のみ
+
+2. **挿入が O(1)**
+   - 新しいURLを高速に追加
+
+3. **メモリ効率**
+   - 10,000件程度なら問題なし
+
+**実装例**:
+```rust
+use std::collections::HashSet;
+
+let mut visited: HashSet<String> = HashSet::new();
+
+fn is_visited(url: &str) -> bool {
+    visited.contains(url)  // O(1)
+}
+
+fn mark_visited(url: String) {
+    visited.insert(url);  // O(1)
+}
+```
+
+**代替案**:
+- **BloomFilter**: メモリ使用量を極限まで減らしたい場合（偽陽性を許容）
+- **LRU Cache**: 固定サイズで古いものを削除したい場合
+
+**避けるべき**:
+- Vec: 重複チェックが O(n) で遅い
+- LinkedList: すべての操作が遅い
+</details>
+
+#### 問題3.2: 実践シナリオ2
+大量のログメッセージ（数百万件）を時系列順に保存し、末尾への追加を頻繁に行う。どのデータ構造が最適か？
+
+<details>
+<summary>解答例</summary>
+
+**推奨**: **Vec<LogMessage>**
+
+**理由**:
+1. **末尾への追加が O(1)**（償却）
+   - push() が高速
+
+2. **キャッシュ効率が良い**
+   - 連続メモリ配置
+   - 時系列走査が高速
+
+3. **メモリ効率**
+   - ポインタのオーバーヘッドなし
+
+4. **ファイル書き込みに最適**
+   - 連続データをそのまま書き出せる
+
+**最適化**:
+```rust
+// 事前に容量を確保
+let mut logs = Vec::with_capacity(1_000_000);
+
+// バッチ書き込み
+logs.extend(new_batch);  // 個別pushより高速
+```
+
+**代替案**:
+- **VecDeque**: 先頭からの削除も必要な場合（循環バッファ）
+- **ファイル直接書き込み**: メモリ節約したい場合
+
+**避けるべき**:
+- LinkedList: キャッシュ効率が最悪
+- HashMap: 時系列順序が保証されない
+</details>
+
+#### 問題3.3: 実践シナリオ3
+コマンドライン履歴機能を実装する。上下キーで履歴を辿り、新しいコマンドを末尾に追加する。どのデータ構造を使うべきか？
+
+<details>
+<summary>解答例</summary>
+
+**推奨**: **Vec<String>** + カーソル位置管理
+
+**理由**:
+1. **履歴の走査が O(1)**
+   - インデックスアクセスで高速
+
+2. **末尾への追加が O(1)**
+   - 新コマンドを push
+
+3. **メモリ効率**
+   - 連続配置
+
+**実装例**:
+```rust
+struct CommandHistory {
+    history: Vec<String>,
+    cursor: usize,  // 現在表示中の履歴位置
+}
+
+impl CommandHistory {
+    fn new() -> Self {
+        Self {
+            history: Vec::new(),
+            cursor: 0,
+        }
+    }
+
+    fn add(&mut self, cmd: String) {
+        self.history.push(cmd);
+        self.cursor = self.history.len();  // 最新位置にリセット
+    }
+
+    fn previous(&mut self) -> Option<&str> {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+            Some(&self.history[self.cursor])
+        } else {
+            None
+        }
+    }
+
+    fn next(&mut self) -> Option<&str> {
+        if self.cursor < self.history.len() - 1 {
+            self.cursor += 1;
+            Some(&self.history[self.cursor])
+        } else {
+            self.cursor = self.history.len();
+            None  // 最新を超えたら空
+        }
+    }
+}
+```
+
+**最適化**:
+- 履歴数制限（例：1000件）
+- 重複削除
+- 永続化（ファイル保存）
+
+**避けるべき**:
+- LinkedList: ランダムアクセスが O(n)
+- VecDeque: この用途では利点なし
+</details>
+
+#### 問題3.4: 実践シナリオ4
+タスクスケジューラーで、優先度付きタスクを管理する。高優先度のタスクから処理したい。どのデータ構造を使うべきか？
+
+<details>
+<summary>解答例</summary>
+
+**推奨**: **BinaryHeap<Task>**（優先度キュー）
+
+**理由**:
+1. **最高優先度の取得が O(1)**
+   - peek() で即座にアクセス
+
+2. **挿入が O(log n)**
+   - ヒープ構造で効率的
+
+3. **削除が O(log n)**
+   - pop() で最高優先度を取得・削除
+
+**実装例**:
+```rust
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
+
+#[derive(Eq, PartialEq)]
+struct Task {
+    priority: u32,
+    name: String,
+}
+
+impl Ord for Task {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.priority.cmp(&other.priority)
+    }
+}
+
+impl PartialOrd for Task {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+let mut scheduler = BinaryHeap::new();
+
+// タスク追加
+scheduler.push(Task { priority: 5, name: "Low".into() });
+scheduler.push(Task { priority: 10, name: "High".into() });
+scheduler.push(Task { priority: 7, name: "Med".into() });
+
+// 処理（優先度順）
+while let Some(task) = scheduler.pop() {
+    println!("Processing: {}", task.name);  // High, Med, Low
+}
+```
+
+**代替案**:
+- **Vec + sort**: 頻繁な挿入がない場合
+- **BTreeMap<Priority, VecDeque<Task>>**: 同じ優先度をFIFO処理
+
+**避けるべき**:
+- Vec のみ: 最高優先度の検索が O(n)
+- LinkedList: すべてが遅い
+
+**計算量比較**:
+
+| 操作 | Vec（ソート） | BinaryHeap |
+|-----|------------|-----------|
+| 挿入 | O(n) | O(log n) |
+| 最大値取得 | O(1) | O(1) |
+| 最大値削除 | O(n) | O(log n) |
+
+</details>
+
+---
+
+### カテゴリ4: 実装の理解（バグ発見）
+
+#### 問題4.1: MyVecのバグ
+以下の `MyVec` 実装にはバグがあります。どこが間違っているか指摘してください。
+
+```rust
+pub fn push(&mut self, value: T) {
+    if self.len == self.capacity {
+        self.grow();
+    }
+
+    unsafe {
+        ptr::write(self.ptr.as_ptr().add(self.capacity), value);  // ← バグ
+    }
+
+    self.len += 1;
+}
+```
+
+<details>
+<summary>解答</summary>
+
+**バグ**: `self.capacity` ではなく `self.len` を使うべき
+
+**問題点**:
+```
+capacity = 4, len = 2 の場合:
+
+正しい挿入位置:
+[0][1][?][?]
+      ↑ len=2 の位置に書き込むべき
+
+間違った挿入位置:
+[0][1][?][?]
+            ↑ capacity=4 の位置（範囲外）
+```
+
+**修正**:
+```rust
+unsafe {
+    ptr::write(self.ptr.as_ptr().add(self.len), value);
+}
+```
+
+**理由**:
+- `len` は現在の要素数（次の挿入位置）
+- `capacity` は確保済みの容量（最大インデックス + 1）
+</details>
+
+#### 問題4.2: LinkedListのバグ
+以下の `push_back` 実装にはバグがあります。どこが間違っているか指摘してください。
+
+```rust
+pub fn push_back(&mut self, data: T) {
+    let new_node = Box::new(Node { data, next: None });
+
+    let mut current = &mut self.head;
+    while current.is_some() {
+        current = &mut current.as_mut().unwrap().next;  // ← バグ
+    }
+
+    *current = Some(new_node);
+    self.len += 1;
+}
+```
+
+<details>
+<summary>解答</summary>
+
+**バグ**: 空のリストの場合を処理していない
+
+**問題点**:
+```rust
+// head が None の場合
+let mut current = &mut self.head;  // current = &mut None
+while current.is_some() {          // false なのでループしない
+    // ...
+}
+*current = Some(new_node);  // head に直接セット（これは正しい）
+```
+
+実はこのコードは**動作する**が、以下の点で非効率：
+
+1. **空のリストでもループに入る**
+2. **最後のノードまで辿る必要がある**（O(n)）
+
+**改善版**:
+```rust
+pub fn push_back(&mut self, data: T) {
+    let new_node = Box::new(Node { data, next: None });
+
+    match self.head {
+        None => {
+            // 空のリストの場合は head にセット
+            self.head = Some(new_node);
+        }
+        Some(ref mut head) => {
+            // 末尾まで辿る
+            let mut current = head;
+            while current.next.is_some() {
+                current = current.next.as_mut().unwrap();
+            }
+            current.next = Some(new_node);
+        }
+    }
+
+    self.len += 1;
+}
+```
+
+**さらなる最適化**:
+末尾ポインタ（tail）を持つ
+```rust
+pub struct LinkedList<T> {
+    head: Option<Box<Node<T>>>,
+    tail: *mut Node<T>,  // 末尾への生ポインタ
+    len: usize,
+}
+
+// push_back が O(1) になる
+```
+</details>
+
+#### 問題4.3: HashMapのバグ
+以下の `insert` 実装にはバグがあります。どこが間違っているか指摘してください。
+
+```rust
+pub fn insert(&mut self, key: K, value: V) {
+    let index = self.hash(&key);
+    let bucket = &mut self.buckets[index];
+
+    // 既存のキーを探す
+    for entry in bucket.iter_mut() {
+        if entry.key == key {
+            entry.value = value;
+            self.len += 1;  // ← バグ
+            return;
+        }
+    }
+
+    // 新しいエントリを追加
+    bucket.push_back(Entry { key, value });
+    self.len += 1;
+}
+```
+
+<details>
+<summary>解答</summary>
+
+**バグ**: 既存キーの値を更新する場合、`len` をインクリメントしてはいけない
+
+**問題点**:
+```rust
+if entry.key == key {
+    entry.value = value;  // 値を更新
+    self.len += 1;        // ← 要素数は変わっていないのにインクリメント
+    return;
+}
+```
+
+**修正**:
+```rust
+pub fn insert(&mut self, key: K, value: V) {
+    let index = self.hash(&key);
+    let bucket = &mut self.buckets[index];
+
+    // 既存のキーを探す
+    for entry in bucket.iter_mut() {
+        if entry.key == key {
+            entry.value = value;
+            return;  // len はインクリメントしない
+        }
+    }
+
+    // 新しいエントリを追加
+    bucket.push_back(Entry { key, value });
+    self.len += 1;  // 新規追加時のみインクリメント
+
+    // リサイズチェック
+    if self.load_factor() > 0.75 {
+        self.resize();
+    }
+}
+```
+
+**正しい動作**:
+```
+初期: map.len() = 0
+insert("a", 1): len = 1
+insert("b", 2): len = 2
+insert("a", 3): len = 2  ← 既存キー更新なので変わらない
+```
+</details>
+
+---
+
+### カテゴリ5: 応用問題
+
+#### 問題5.1: Rustの所有権とデータ構造
+なぜRustで双方向連結リストの実装が難しいのか、所有権システムの観点から説明してください。
+
+<details>
+<summary>解答例</summary>
+
+**双方向連結リストの構造**:
+```
+┌──────┐    ┌──────┐    ┌──────┐
+│ Node │←──→│ Node │←──→│ Node │
+│  A   │    │  B   │    │  C   │
+└──────┘    └──────┘    └──────┘
+```
+
+**Rustの所有権ルール**:
+1. 各値は1つの所有者のみ
+2. 所有者がスコープを抜けると値は破棄される
+3. 同時に複数の可変参照は持てない
+
+**問題1: 相互参照**
+```rust
+struct Node<T> {
+    data: T,
+    prev: Option<Box<Node<T>>>,  // ← Node C は Node B を所有
+    next: Option<Box<Node<T>>>,  // ← Node B は Node C を所有
+}
+// → 循環所有で、どちらが真の所有者か？
+```
+
+**問題2: 複数の可変参照**
+```rust
+// Node B から見ると:
+let b_prev = &mut node_a;  // A への可変参照
+let b_next = &mut node_c;  // C への可変参照
+
+// Node C から見ると:
+let c_prev = &mut node_b;  // B への可変参照
+// → B への可変参照が2つ存在（所有権ルール違反）
+```
+
+**解決策**:
+
+**1. `Rc<RefCell<Node<T>>>`**
+```rust
+use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Node<T> {
+    data: T,
+    prev: Option<Rc<RefCell<Node<T>>>>,  // 共有所有権
+    next: Option<Rc<RefCell<Node<T>>>>,  // 実行時借用チェック
+}
+```
+
+- `Rc`: 参照カウント（複数の所有者）
+- `RefCell`: 実行時の可変借用チェック
+
+**トレードオフ**:
+- ✅ 所有権ルールを満たす
+- ❌ 参照カウントのオーバーヘッド
+- ❌ 実行時チェックのコスト
+- ❌ 循環参照によるメモリリーク可能性
+
+**2. 生ポインタ `*mut Node<T>`**
+```rust
+struct Node<T> {
+    data: T,
+    prev: *mut Node<T>,  // 生ポインタ（unsafe）
+    next: *mut Node<T>,
+}
+```
+
+- unsafe ブロックが必要
+- 手動でメモリ管理
+- 高速だが危険
+
+**結論**:
+Rustの双方向連結リストは実装可能だが、複雑で実用性が低い。
+**Vec や VecDeque を使うべき**。
+</details>
+
+#### 問題5.2: データ構造の最適化
+`Vec` の `remove(index)` は O(n) です。どのように最適化できますか？
+
+<details>
+<summary>解答例</summary>
+
+**問題: `Vec::remove(index)` は O(n)**
+
+```rust
+let mut vec = vec![1, 2, 3, 4, 5];
+vec.remove(1);  // [1, _, 3, 4, 5] → [1, 3, 4, 5]
+                // 後続要素を前に詰める（O(n)）
+```
+
+**最適化1: `swap_remove(index)` - O(1)**
+
+順序を保持する必要がない場合:
+```rust
+let mut vec = vec![1, 2, 3, 4, 5];
+vec.swap_remove(1);  // [1, 5, 3, 4]
+                      // ↑ 最後の要素と交換してpop
+```
+
+**実装**:
+```rust
+pub fn swap_remove(&mut self, index: usize) -> T {
+    let last_index = self.len() - 1;
+    self.swap(index, last_index);  // O(1)
+    self.pop().unwrap()            // O(1)
+}
+```
+
+**最適化2: 削除のバッチ処理**
+
+複数要素を削除する場合:
+```rust
+// 悪い例: O(n²)
+for index in indices_to_remove {
+    vec.remove(index);  // 各削除で O(n)
+}
+
+// 良い例: O(n)
+vec.retain(|&x| !should_remove(x));  // 1パスで削除
+```
+
+**最適化3: `VecDeque` を使う**
+
+先頭削除が頻繁な場合:
+```rust
+use std::collections::VecDeque;
+
+let mut deque = VecDeque::from(vec![1, 2, 3, 4, 5]);
+deque.pop_front();  // O(1)
+```
+
+**最適化4: インデックスではなくマーカーを使う**
+
+```rust
+struct Item {
+    data: i32,
+    deleted: bool,  // 削除マーク
+}
+
+// 削除を O(1) に
+item.deleted = true;
+
+// 定期的にクリーンアップ
+vec.retain(|item| !item.deleted);
+```
+
+**計算量比較**:
+
+| 操作 | Vec::remove | swap_remove | VecDeque |
+|-----|------------|-------------|----------|
+| 先頭削除 | O(n) | O(1)* | O(1) |
+| 末尾削除 | O(1) | O(1) | O(1) |
+| 中間削除 | O(n) | O(1)* | O(n) |
+
+\* 順序が変わる
+</details>
+
+#### 問題5.3: メモリレイアウトの詳細
+以下のコードのメモリ使用量を計算してください（64ビットシステム）：
+
+```rust
+let vec: Vec<i32> = vec![1, 2, 3, 4, 5];
+```
+
+<details>
+<summary>解答例</summary>
+
+**スタック上のメモリ**:
+```
+Vec のメタデータ:
+- ptr: 8バイト（ポインタ）
+- len: 8バイト（usize）
+- cap: 8バイト（usize）
+合計: 24バイト
+```
+
+**ヒープ上のメモリ**:
+```
+要素: i32 × 5 = 4 × 5 = 20バイト
+
+実際の確保量（capacity）:
+Vec の拡張戦略によるが、len=5 なら cap=8 の可能性
+→ 4 × 8 = 32バイト確保
+```
+
+**合計メモリ使用量**:
+```
+24バイト（スタック）+ 32バイト（ヒープ） = 56バイト
+```
+
+**詳細**:
+```
+スタック:
+┌─────────────────┐
+│ Vec<i32>        │
+│ ptr: 0x7fff... │  8バイト
+│ len: 5          │  8バイト
+│ cap: 8          │  8バイト
+└────────┬────────┘
+         │
+         ↓
+ヒープ:
+┌─────────────────────────────────┐
+│ [1][2][3][4][5][?][?][?]        │  32バイト
+│  使用中 5個    |  未使用 3個     │
+└─────────────────────────────────┘
+```
+
+**実測方法**:
+```rust
+use std::mem;
+
+let vec: Vec<i32> = vec![1, 2, 3, 4, 5];
+println!("Stack size: {}", mem::size_of::<Vec<i32>>());  // 24
+println!("Heap size: {}", vec.capacity() * mem::size_of::<i32>());  // 32
+println!("Total: {}", mem::size_of_val(&vec) + vec.capacity() * mem::size_of::<i32>());  // 56
+```
+
+**比較: 配列の場合**:
+```rust
+let arr: [i32; 5] = [1, 2, 3, 4, 5];
+// スタックのみ: 4 × 5 = 20バイト
+// メタデータなし
+```
+
+**結論**:
+- Vec: 56バイト（オーバーヘッド大）
+- 配列: 20バイト（オーバーヘッドなし）
+- 小さいデータ（<数百要素）では配列が有利
+- 動的サイズが必要なら Vec
+</details>
+
+#### 問題5.4: キャッシュ最適化
+以下のコードのパフォーマンスを改善する方法を提案してください：
+
+```rust
+let mut results = Vec::new();
+for i in 0..1000 {
+    results.push(expensive_computation(i));
+}
+```
+
+<details>
+<summary>解答例</summary>
+
+**問題点**:
+- `Vec::new()` は容量0から開始
+- `push()` のたびに再アロケーション発生の可能性
+- 1000回の push で log₂(1000) ≈ 10回の再アロケーション
+
+**最適化1: 事前容量確保**
+```rust
+let mut results = Vec::with_capacity(1000);
+for i in 0..1000 {
+    results.push(expensive_computation(i));
+}
+// 再アロケーション: 0回
+```
+
+**最適化2: イテレータの collect**
+```rust
+let results: Vec<_> = (0..1000)
+    .map(|i| expensive_computation(i))
+    .collect();
+// collect が自動的に容量を確保
+```
+
+**最適化3: 並列化**
+```rust
+use rayon::prelude::*;
+
+let results: Vec<_> = (0..1000)
+    .into_par_iter()
+    .map(|i| expensive_computation(i))
+    .collect();
+// マルチコアで並列処理
+```
+
+**最適化4: プリフェッチ**
+```rust
+let mut results = Vec::with_capacity(1000);
+for chunk in (0..1000).step_by(8) {
+    // 8要素ずつ処理（キャッシュラインサイズ考慮）
+    for i in chunk..chunk.min(1000, chunk + 8) {
+        results.push(expensive_computation(i));
+    }
+}
+```
+
+**パフォーマンス比較**（1000要素）:
+
+| 方法 | 再アロケーション | 相対速度 |
+|-----|-------------|--------|
+| `Vec::new()` | ~10回 | 1.0x |
+| `with_capacity(1000)` | 0回 | 1.2x |
+| `collect()` | 0-1回 | 1.2x |
+| 並列化 | 0回 | 4-8x |
+
+**推奨**:
+- シンプル: `with_capacity()`
+- 関数型: `collect()`
+- 高速: 並列化（計算コストが高い場合）
+</details>
+
+---
+
+### 理解度チェックの目安
+
+以下の基準で次のステップへの準備ができているか判断してください：
+
+| レベル | 基準 | 推奨アクション |
+|-------|------|-------------|
+| **🟢 準備完了** | カテゴリ1-3の80%以上正答 | 次のWeekへ進んで問題なし |
+| **🟡 要復習** | カテゴリ1-3の50-80%正答 | 不正解の分野を復習後、次へ |
+| **🔴 理解不足** | カテゴリ1-3の50%未満 | 実装とテストを再度実施 |
+
+**カテゴリ4-5**: 発展的内容のため、次のWeekで学びながら理解を深めても問題ありません。
+
 ## ✅ チェックリスト
 
 - [ ] MyVec の基本機能を実装
