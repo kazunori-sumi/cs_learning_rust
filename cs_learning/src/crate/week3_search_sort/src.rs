@@ -379,25 +379,51 @@ pub mod advanced_sorts {
     /// # アルゴリズム
     /// 分割統治法。配列を再帰的に半分に分割し、ソートしてマージする。
     pub fn merge_sort<T: Ord + Clone>(arr: &mut [T]) {
-        // TODO: 実装してください
         // ヒント:
         // 1. 配列が1要素以下なら終了
+        if arr.len() <= 1 {
+            return;
+        }
         // 2. 配列を半分に分割（mid = arr.len() / 2）
+        let mid = arr.len() / 2;
         // 3. 左半分を再帰的にソート（&mut arr[..mid]）
+        merge_sort(&mut arr[..mid]);
         // 4. 右半分を再帰的にソート（&mut arr[mid..]）
+        merge_sort(&mut arr[mid..]);
         // 5. 2つのソート済み配列をマージ（merge関数使用）
+        let merged = merge(&arr[..mid], &arr[mid..]);
         // 6. マージ結果を元の配列にコピーバック（arr.copy_from_slice）
-        todo!()
+        arr.clone_from_slice(&merged);
     }
 
     /// 2つのソート済み配列をマージする補助関数
     fn merge<T: Ord + Clone>(left: &[T], right: &[T]) -> Vec<T> {
-        // TODO: 実装してください
         // ヒント:
         // 1. 結果用の配列を作成
+        let mut result: Vec<T> = Vec::with_capacity(left.len() + right.len());
         // 2. leftとrightの先頭から順に小さい方を結果に追加
         // 3. どちらかが終わったら、残りをすべて追加
-        todo!()
+        let mut l_idx = 0;
+        let mut r_idx = 0;
+        while l_idx < left.len() && r_idx < right.len() {
+            if left[l_idx] < right[r_idx] {
+                result.push(left[l_idx].clone());
+                l_idx += 1;
+            } else {
+                result.push(right[r_idx].clone());
+                r_idx += 1;
+            }
+        }
+        while l_idx < left.len() {
+            result.push(left[l_idx].clone());
+            l_idx += 1;
+        }
+        while r_idx < right.len() {
+            result.push(right[r_idx].clone());
+            r_idx += 1;
+        }
+
+        return result;
     }
 
     /// クイックソート
@@ -473,7 +499,6 @@ pub mod advanced_sorts {
         use super::*;
 
         #[test]
-        #[ignore]
         fn test_merge_sort() {
             let mut arr = vec![5, 2, 8, 1, 9, 3, 7, 4];
             merge_sort(&mut arr);
@@ -497,11 +522,17 @@ pub mod advanced_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_merge_sort_reverse() {
             let mut arr = vec![9, 8, 7, 6, 5, 4, 3, 2, 1];
             merge_sort(&mut arr);
             assert_eq!(arr, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        }
+
+        #[test]
+        fn test_merge_sort_empty() {
+            let mut arr: Vec<i32> = vec![];
+            merge_sort(&mut arr);
+            assert_eq!(arr, vec![]);
         }
 
         #[test]
@@ -510,14 +541,6 @@ pub mod advanced_sorts {
             let mut arr = vec![3, 1, 4, 1, 5, 9, 2, 6, 5];
             quick_sort(&mut arr);
             assert_eq!(arr, vec![1, 1, 2, 3, 4, 5, 5, 6, 9]);
-        }
-
-        #[test]
-        #[ignore]
-        fn test_merge_sort_empty() {
-            let mut arr: Vec<i32> = vec![];
-            merge_sort(&mut arr);
-            assert_eq!(arr, vec![]);
         }
 
         #[test]
