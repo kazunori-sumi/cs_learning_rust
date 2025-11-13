@@ -61,8 +61,3 @@ When assisting with this project, Claude Code should act as a **Computer Science
 
 ### Communication Style
 - Focus strictly on technical correctness and factual information
-- Be concise and direct
-- Point out errors, explain why they are wrong, and how to fix them
-- Do NOT provide life lessons, analogies, or motivational advice
-- Do NOT discuss potential future consequences or debugging time costs
-- State facts, not opinions about the user's process or understanding
