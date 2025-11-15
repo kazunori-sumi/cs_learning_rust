@@ -398,30 +398,20 @@ pub mod advanced_sorts {
 
     /// 2つのソート済み配列をマージする補助関数
     fn merge<T: Ord + Clone>(left: &[T], right: &[T]) -> Vec<T> {
-        // ヒント:
-        // 1. 結果用の配列を作成
         let mut result: Vec<T> = Vec::with_capacity(left.len() + right.len());
-        // 2. leftとrightの先頭から順に小さい方を結果に追加
-        // 3. どちらかが終わったら、残りをすべて追加
-        let mut l_idx = 0;
-        let mut r_idx = 0;
-        while l_idx < left.len() && r_idx < right.len() {
-            if left[l_idx] < right[r_idx] {
-                result.push(left[l_idx].clone());
-                l_idx += 1;
+        let mut left_iter = left.iter().peekable();
+        let mut right_iter = right.iter().peekable();
+
+        while let (Some(&l), Some(&r)) = (left_iter.peek(), right_iter.peek()) {
+            if l <= r {
+                result.push(left_iter.next().unwrap().clone());
             } else {
-                result.push(right[r_idx].clone());
-                r_idx += 1;
+                result.push(right_iter.next().unwrap().clone());
             }
         }
-        while l_idx < left.len() {
-            result.push(left[l_idx].clone());
-            l_idx += 1;
-        }
-        while r_idx < right.len() {
-            result.push(right[r_idx].clone());
-            r_idx += 1;
-        }
+
+        result.extend(left_iter.cloned());
+        result.extend(right_iter.cloned());
 
         return result;
     }
