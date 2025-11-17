@@ -426,13 +426,16 @@ pub mod advanced_sorts {
     /// # アルゴリズム
     /// ピボットを選び、それより小さい要素と大きい要素に分割して再帰的にソート。
     pub fn quick_sort<T: Ord>(arr: &mut [T]) {
-        // TODO: 実装してください
-        // ヒント:
         // 1. 配列が1要素以下なら終了（arr.len() <= 1）
+        if arr.len() <= 1 {
+            return;
+        }
         // 2. partition関数を呼び出してピボット位置を取得
+        let pivot_posi = partition(arr);
         // 3. 左側を再帰的にソート（&mut arr[..pivot_pos]）
+        quick_sort(&mut arr[..pivot_posi]);
         // 4. 右側を再帰的にソート（&mut arr[pivot_pos + 1..]）
-        todo!()
+        quick_sort(&mut arr[pivot_posi + 1..]);
     }
 
     /// パーティション操作（クイックソートの補助関数）
@@ -440,15 +443,21 @@ pub mod advanced_sorts {
     /// 配列の最後の要素をピボットとして、ピボットより小さい要素を左、
     /// 大きい要素を右に分割し、ピボットの最終位置を返す。
     fn partition<T: Ord>(arr: &mut [T]) -> usize {
-        // TODO: 実装してください
         // ヒント（Lomuto partition scheme）:
         // 1. ピボット = 最後の要素（arr[arr.len() - 1]）
+        let pivot_index = arr.len() - 1;
         // 2. i = -1（小さい要素の境界）
-        // 3. j = 0 から arr.len() - 2 まで繰り返す:
-        //    - arr[j] <= ピボット なら i++, swap(arr[i], arr[j])
-        // 4. swap(arr[i + 1], arr[arr.len() - 1])
-        // 5. return i + 1
-        todo!()
+        let mut i: isize = -1;
+        for j in 0..arr.len() - 1 {
+            if arr[j] <= arr[pivot_index] {
+                i += 1;
+                arr.swap(i as usize, j);
+            }
+        }
+        let pivot_pos = (i + 1) as usize;
+        arr.swap(pivot_pos, pivot_index);
+
+        pivot_pos
     }
 
     /// ヒープソート（チャレンジ課題）
@@ -496,7 +505,6 @@ pub mod advanced_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_quick_sort() {
             let mut arr = vec![5, 2, 8, 1, 9, 3, 7, 4];
             quick_sort(&mut arr);
@@ -526,7 +534,6 @@ pub mod advanced_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_quick_sort_duplicates() {
             let mut arr = vec![3, 1, 4, 1, 5, 9, 2, 6, 5];
             quick_sort(&mut arr);
@@ -534,7 +541,6 @@ pub mod advanced_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_quick_sort_empty() {
             let mut arr: Vec<i32> = vec![];
             quick_sort(&mut arr);
@@ -550,7 +556,6 @@ pub mod advanced_sorts {
         }
 
         #[test]
-        #[ignore]
         fn test_merge_sort_single() {
             let mut arr = vec![42];
             merge_sort(&mut arr);
